@@ -283,17 +283,17 @@ MERGE 프로시저가 어떻게 작동하는지 이해하기 쉽게 카드로 �
 
 ```
 MERGE(A, p, q ,r)
-nl = q - p + 1
-nr = r - q
+nl = q - p + 1 // A[p:q}의 크기
+nr = r - q // A[q + 1 :r]의 크기
 배열L[0:nl -1]과 R[0:nr -1]을 생성한다.
-for i = 0 to nl - 1
+for i = 0 to nl - 1 // A[p:q}를 L[0:nl -1}로 복사
      L[i] = A[p + i]
-for j = 0 to nr -1
+for j = 0 to nr -1 // [q + 1 :r]을 R[0 : nr -1] 로 복사
      R[j] = A[q + j + 1]
-i = 0
-j = 0
-k = p
-
+i = 0 // i는 L에 남아있는 가장 작은 원소를 인덱싱
+j = 0 // j는 R에 남아있는 가장 작은 원소를 인덱싱
+k = p // k는 채울 A의 위치를 인덱싱
+// 각 배열 L과 R에 병합되지 않은 원소가 포함되어 있으면 병합되지 않은 원소 중 가장 작은 원소를 A[p:r]로 다시 복사
 while i < nl and j < nr
      if L[i]<= L[i]
           A[k] = L[i]
@@ -301,6 +301,7 @@ while i < nl and j < nr
      else A[k] = R[j]
           j = j +1
      k = k + 1
+// L과 R 중 하나를 완전히 살펴본 후 나머지 하나를 A[p:r]끝에 복사
 while i < nl
      A[k] = L[i]
      i = i + 1
@@ -316,7 +317,7 @@ MERGE 프로시저는 구체적으로 다음과 같이 작동한다. 두 개의 
      - 이 예제에서는 1-원점 인덱싱과 0-원점 인덱싱을 모두 사용하는 드문 경우다
 2. 그리고 3행에서 크기가 각각 nl과 nr인 배열 L[0:nl -1]과 R[0:nr-1]을 생성한다.
 3. 4 ~ 5행의 for루프에서 부분 배열 A[p:q]를 L로 복사하고, 6~7행의 for 루프에서 부분 배열 A[q + 1:r]을 R로 복사한다.
-4. 12 ~ 18행의 while 루프는 L과 R에서 아직 복사되지 않은 가장 작은 ㄱ밧을 반복적으로 식별하여 A[p:r]에 다시 복사한다.
+4. 12 ~ 18행의 while 루프는 L과 R에서 아직 복사되지 않은 가장 작은 값을 반복적으로 식별하여 A[p:r]에 다시 복사한다.
      - 주석에서 알 수 있듯이 인덱스 k는 채워지고 있는 A의 위치를, 인덱스 i와 j는 각각 L과 R에서 남은 가장 작은값의 위치를 나타낸다.
      - 결국 L의 전체 또는 R의 전체가 A[p:r]에 다시 복사되고 이 루프가 종료된다.
      - R의 전부가 다시 복사되어 종료되는 경우, 즉 j가 nr과 같아서 루프가 종료되는 경우, i는 여전히 nl보다 작으므로 L의 일부가 아직 복사되지 않았고 이 값은 L과 R 전체에서 가장 크다.
@@ -328,16 +329,70 @@ MERGE 프로시저는 구체적으로 다음과 같이 작동한다. 두 개의 
 
 ```
 MERGE-SORT(A,p,r)
-1 if p >= r
+1 if p >= r // 0 또는 하나의 원소일 경우
 2     return
-3 q = (p + r)/2 보다 작거나 같은 최대 정수
-4 MERGE-SORT(A, p, q)
-5 MERGE-SORT(A, q + 1, r)
-6 //
+3 q = (p + r)/2 보다 작거나 같은 최대 정수 // [p:r]의 중간점
+4 MERGE-SORT(A, p, q) // A[p:q]를 재귀적으로 정렬
+5 MERGE-SORT(A, q + 1, r) // A[q + 1: r]을 재귀적으로 정렬
+6 // 위의 두 배열을 다시 A[p:r]로 병합한다.
 7 MERGE(A, p, q, r)
 ```
 
 만약 입력값 n이 2의 정확한 거듭제곱이 아닌 경우 일부 분할 단계에서는 크기가 1씩 다른 부분 배열을 만든다(예를 들어 크기 7의 부분배열을 나눌 떄 하나는 4 하나는 3). 병합되는 두 부분 배열의 크기에 관계없이 총 n개의 원소를 병합하는 데 걸리는 시간은 O(n)이다.
+
+#### 실제 자바 코드 구현
+
+1. MERGE 메서드
+``` java
+public void Merge(int[] A, int p, int q, int r) {
+     int numLeft = q - p + 1;
+     int numRight = r - q;
+
+     int[] leftArray = new int[numLeft];
+     int[] rightArray = new int[numRight];
+
+     for(int i = 0; i < leftArray.length; i ++) {
+          leftArray[i] = A[p + i];
+     }
+     for(int j = 0; j < rightArray.length; j++) {
+          rightArray[j] = A[q + j + 1];
+     }
+     int i = 0;
+     int j = 0;
+     int k = p;
+
+     while(i < numLeft && j < numRight) {
+          if (leftArray[i] <= rightArray[j]) {
+               A[k] = leftArray[i];
+               i++;
+          } else {
+               A[k] = rightArray[j];
+               j++;
+          }
+          k++;
+     }
+     while(i < numLeft) {
+          A[k] = leftArray[i];
+          i++;
+          k++;
+     }
+      while(j < numRight) {
+          A[k] = rightArray[j];
+          j++;
+          k++;
+     }
+}
+```
+2.Merge-Sort 메서드
+```java
+public void MergeSort(int[] A, int p, int r) {
+     if (p >= r) return;
+     int q = (p + r) /2;
+     MergeSort(A, p, q);
+     MergeSort(A, q+1, r);
+     Merge(A, p, q, r);
+}
+```
 
 ### 분할 정복 알고리즘의 분석
 
